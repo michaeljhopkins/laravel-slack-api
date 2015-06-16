@@ -3,9 +3,12 @@
 namespace Vluzrmos\SlackApi\Methods;
 
 use Vluzrmos\SlackApi\Contracts\SlackUser;
+use Vluzrmos\SlackApi\Traits\Identicable;
 
 class User extends SlackMethod implements SlackUser
 {
+	use Identicable;
+
     protected $methodsGroup = "users.";
 
     /**
@@ -78,64 +81,86 @@ class User extends SlackMethod implements SlackUser
     }
 
     /**
-     * Get an array of users id's by nicks
+     * Get an array of users id's by nicks, username, email
      *
-     * @param string|array $nicks
-     * @param bool         $force force to reload the users list
+     * @param string|array $search
+     * @param bool $force force to reload the users list
      *
      * @return array
      */
-    public function getUsersIDsByNicks($nicks, $force = false)
+    public function getUsersIdentities($search, $force = false)
     {
-        static $users;
-
-        if (!$users || $force) {
-            $users = $this->lists();
-        }
-
-        if (!is_array($nicks)) {
-            $nicks = preg_split('/, ?/', $nicks);
-        }
-
-        $usersIds = [];
-
-        foreach ($users['members'] as $user) {
-            foreach ($nicks as $nick) {
-                if ($this->isUserNick($user, $nick)) {
-                    $usersIds[] = $user['id'];
-                } elseif ($this->isSlackbotNick($nick)) {
-                    $usersIds[] ='USLACKBOT';
-                }
-            }
-        }
-
-        return $usersIds;
+        return $this->searchIdentities($search, $force);
     }
 
+
+	/**
+	 * Returns a comma separated users ids
+	 *
+	 * @param string $search
+	 *
+	 * @param bool $force
+	 *
+	 * @return string
+	 */
+	public function getUserIdentity($search, $force = false)
+	{
+		$users = $this->getUsersIdentities($search, $force);
+
+		return implode(",", $users);
+	}
+
     /**
-     * Verify if a given nick is for the user
+     * Verify if a given identity is for the user
      *
      * @param array $user
-     * @param string $nick
+     * @param string $identity
      *
      * @return bool
      */
-    protected function isUserNick($user, $nick)
+    protected function isUserIdentity($user, $identity)
     {
-        $nick = str_replace('@', '', $nick);
+		$identity = preg_replace('/^@/', '', $identity);
 
-        return $nick == $user['name'] || $nick == $user['id'];
+        return in_array($identity,  [ $user['name'], $user['id'], $user['profile']['email'] ]);
     }
 
     /**
-     * Check if a given nick is for the slackbot
+     * Check if a given identity is for the slackbot
      *
-     * @param string $nick
+     * @param string $identity
      *
      * @return bool
      */
-    protected function isSlackbotNick($nick)
+    protected function isSlackbotIdentity($identity)
     {
-        return $nick == 'slackbot' or $nick=='@slackbot' or $nick == 'USLACKBOT';
+		$identity = preg_replace('/^@/', '', $identity);
+
+        return in_array($identity, ['slackbot', 'USLACKBOT']);
     }
+
+	/**
+	 * For Identicable trait, to search members and return his id
+	 * @param array $users
+	 * @param array $search
+	 *
+	 * @return array
+	 */
+	protected function searchSubjectsIdentityCallback($users, $search = [])
+	{
+		$usersIds = [ ];
+
+		foreach ($users['members'] as $user) {
+			foreach ($search as $searching) {
+				if ($this->isUserIdentity($user, $searching)) {
+					$usersIds[] = $user['id'];
+				} elseif ($this->isSlackbotIdentity($searching)) {
+					$usersIds[] ='USLACKBOT';
+				}
+			}
+		}
+
+		return $usersIds;
+	}
+
 }

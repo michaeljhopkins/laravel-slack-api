@@ -3,9 +3,12 @@
 namespace Vluzrmos\SlackApi\Methods;
 
 use Vluzrmos\SlackApi\Contracts\SlackChannel;
+use Vluzrmos\SlackApi\Traits\Identicable;
 
 class Channel extends SlackMethod implements SlackChannel
 {
+	use Identicable;
+
     protected $methodsGroup = "channels.";
 
     /**
@@ -232,4 +235,65 @@ class Channel extends SlackMethod implements SlackChannel
     {
         return $this->method('unarchive', compact($channel));
     }
+
+	/**
+	 * @param      $search
+	 * @param bool $force
+	 *
+	 * @return array
+	 */
+	public function getChannelsIdentities($search, $force = false)
+	{
+		return $this->searchIdentities($search, $force);
+	}
+
+	/**
+	 * @param      $search
+	 * @param bool $force
+	 *
+	 * @return string
+	 */
+	public function getChannelIdentity($search, $force = false)
+	{
+		return $this->searchIdentity($search, $force);
+	}
+
+
+	/**
+	 * For Identicable trait, to search channels and return his id
+	 * @param array $channels
+	 * @param array $search
+	 *
+	 * @return array
+	 */
+	protected function searchSubjectsIdentityCallback($channels, $search = [])
+	{
+		$ids = [];
+
+		$key = (get_called_class() == Group::class)? "groups" : "channels";
+
+		foreach($channels[$key] as $channel) {
+			foreach($search as $searching) {
+				if($this->isChannelIdentity($channel, $searching)) {
+					$ids[] = $channel['id'];
+				}
+			}
+		}
+
+		return $ids;
+	}
+
+	/**
+	 * @param $channel
+	 * @param $identity
+	 *
+	 * @return bool
+	 */
+	protected function isChannelIdentity($channel, $identity)
+	{
+		$identity = preg_replace("/^#/", "", $identity);
+
+		return in_array($identity, [$channel['id'], $channel['name'] ]);
+	}
+
 }

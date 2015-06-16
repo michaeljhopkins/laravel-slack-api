@@ -3,9 +3,12 @@
 namespace Vluzrmos\SlackApi\Methods;
 
 use Vluzrmos\SlackApi\Contracts\SlackGroup;
+use Vluzrmos\SlackApi\Traits\Identicable;
 
 class Group extends Channel implements SlackGroup
 {
+	//use Identicable;
+
     protected $methodsGroup = "groups.";
 
     /**
@@ -56,4 +59,29 @@ class Group extends Channel implements SlackGroup
     {
         return $this->method('createChild', compact('channel'));
     }
+
+	/**
+	 * Get a groups id
+	 * @param string|array $search
+	 * @param bool $force
+	 *
+	 * @return array
+	 */
+	public function getGroupsIdentities($search, $force = false)
+	{
+		return $this->getChannelsIdentities($search, $force);
+	}
+
+	/**
+	 * Get a groups id comma separated
+	 *
+	 * @param string|array $search
+	 * @param bool $force
+	 *
+	 * @return string
+	 */
+	public function getGroupIdentity($search, $force = false)
+	{
+		return $this->getChannelIdentity($search, $force);
+	}
 }
