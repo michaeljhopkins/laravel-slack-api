@@ -24,15 +24,13 @@ class User extends SlackMethod implements SlackUser
     /**
      * This method returns information about a team member.
      *
-     * @param string $user User to get info on
+     * @param string $userId User ID to get info on
      *
      * @return array
      */
-    public function info($user)
+    public function info($userId)
     {
-        $user = $this->getUsersIDsByNicks($user);
-
-        return $this->method('info', ['user' => $user[0]]);
+        return $this->method('info', ['user' => $userId]);
     }
 
     /**
@@ -85,16 +83,14 @@ class User extends SlackMethod implements SlackUser
      * @param string|array $nicks
      * @param bool         $force force to reload the users list
      *
-     * @param int          $cacheMinutes Minutes or a Date to cache the results, default 1 minute
-     *
      * @return array
      */
-    public function getUsersIDsByNicks($nicks, $force = false,  $cacheMinutes = 1)
+    public function getUsersIDsByNicks($nicks, $force = false)
     {
-        $users = $this->cacheGet('list');
+        static $users;
 
         if (!$users || $force) {
-            $users = $this->cachePut('list', $this->lists(), $cacheMinutes);
+            $users = $this->lists();
         }
 
         if (!is_array($nicks)) {
